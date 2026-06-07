@@ -54,7 +54,7 @@ body{font-family:var(--font-body);background:var(--surface);color:var(--text);fo
 
 /* hero */
 .hero{background:var(--black2);padding:1.75rem 1.5rem;}
-.hero-inner{max-width:1200px;margin:0 auto;}
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 340px;gap:2rem;align-items:center;}
 .hero-title{font-family:var(--font-display);font-size:40px;line-height:1;color:#fff;letter-spacing:1px;}
 .hero-title span{color:var(--gold);}
 .hero-sub{font-size:13px;color:#999;margin-top:8px;max-width:640px;}
@@ -90,13 +90,14 @@ body{font-family:var(--font-body);background:var(--surface);color:var(--text);fo
 
 /* table */
 .table-wrap{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
-.result-count{font-family:var(--font-mono);font-size:10px;color:var(--muted);padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);}
+.result-count{font-family:var(--font-mono);font-size:11px;color:var(--muted);padding:9px 14px;background:#fff;border:1px solid var(--border);border-radius:4px;margin-bottom:1rem;}
 .clinic-table{width:100%;border-collapse:collapse;font-size:12px;}
 .clinic-table thead{background:var(--black2);}
 .clinic-table th{padding:9px 12px;text-align:left;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:#666;font-weight:400;}
 .clinic-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .clinic-table tr:last-child td{border-bottom:none;}
-.clinic-table tr:hover td{background:var(--surface);}
+.clinic-table tr{transition:background .12s;}
+.clinic-table tr:hover td{background:rgba(255,184,28,.14);box-shadow:inset 3px 0 0 var(--gold);}
 .cname{font-weight:600;font-size:13px;color:var(--text);text-decoration:none;cursor:pointer;}
 a.cname:hover{color:var(--gold-dim);text-decoration:underline;}
 .caddr{font-size:11px;color:var(--muted);margin-top:2px;}
@@ -128,9 +129,30 @@ tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
   background:var(--gold);color:var(--black2);border:none;font-weight:500;text-decoration:none;display:inline-block;}
 .call-btn:hover{background:var(--gold-dim);color:#fff;}
 .web-link{font-family:var(--font-mono);font-size:10px;color:var(--blue);display:block;margin-top:4px;}
-/* announcement (yellow) bar */
-.launch-bar{background:var(--gold);color:#1a1a1a;font-family:var(--font-body);font-size:12.5px;font-weight:600;text-align:center;padding:8px 14px;}
-.launch-bar a{color:#1a1a1a;text-decoration:underline;}
+/* green preview / featured banner */
+.preview-bar{background:#1d3a2e;color:#cfeede;font-family:var(--font-body);font-size:12.5px;font-weight:600;text-align:center;padding:7px 12px;}
+.preview-bar a{color:#9fe3c0;text-decoration:underline;}
+/* yellow help-line bar */
+.help-line{width:100%;background:var(--gold);}
+.help-line-inner{max-width:1200px;margin:0 auto;padding:12px 1.5rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;}
+.help-line-label{font-family:var(--font-display);font-size:16px;font-weight:800;color:#1a1a1a;letter-spacing:.5px;}
+.help-line-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.help-line-btn{display:inline-flex;align-items:center;gap:6px;background:#1a1a1a;color:var(--gold);font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:.5px;padding:10px 18px;border-radius:7px;text-decoration:none;transition:opacity .2s;white-space:nowrap;}
+.help-line-btn:hover{opacity:.85;}
+/* quick referral (Refer) card */
+.qr-card{background:#fff;border-radius:8px;padding:16px;width:330px;box-shadow:0 6px 22px rgba(0,0,0,.28);}
+.qr-title{font-size:14px;font-weight:700;color:#1a1a1a;margin-bottom:10px;}
+.qr-label{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.qr-roles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
+.qr-role{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:1.5px solid var(--border);border-radius:6px;background:var(--surface);color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;transition:all .12s;}
+.qr-role span{font-size:18px;}
+.qr-role:hover,.qr-role.on{border-color:var(--gold);background:var(--gold-bg);color:#1a1a1a;}
+.qr-input{width:100%;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-size:13px;font-family:var(--font-body);outline:none;margin-bottom:8px;}
+.qr-input:focus{border-color:var(--gold);}
+.qr-submit{width:100%;background:var(--gold);color:#1a1a1a;border:none;padding:11px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font-body);}
+.qr-submit:hover{background:var(--gold-dim);color:#fff;}
+.qr-privacy{font-size:10px;color:#aaa;margin-top:8px;text-align:center;}
+.qr-done{font-size:15px;font-weight:700;color:var(--green);text-align:center;padding:10px 0;}
 /* card action buttons */
 .fc-actions{display:flex;gap:4px;flex-wrap:wrap;max-width:240px;}
 .fc-btn{font-size:10px;padding:4px 8px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:var(--font-mono);white-space:nowrap;text-decoration:none;display:inline-block;transition:all .12s;}
@@ -156,6 +178,9 @@ tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .map-panel{position:static;}
   #md-map{height:380px;min-height:0;}
+  .hero-inner{grid-template-columns:1fr;}
+  .qr-card{width:100%;}
+  .help-line-inner{flex-direction:column;text-align:center;}
 }
 </style>
 </head>
@@ -172,15 +197,46 @@ tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
   </div>
 </header>
 
-<div class="launch-bar">★ Featured clinic listings now available — clinics, <a href="mailto:info@marylandmethadone.help?subject=Featured%20Listing%20Inquiry">reserve your spot &rarr;</a></div>
+<div class="preview-bar">★ Featured clinic listings now available — clinics, <a href="mailto:info@marylandmethadone.help?subject=Featured%20Listing%20Inquiry">reserve your spot &rarr;</a></div>
 
 <section class="hero">
   <div class="hero-inner">
-    <h1 class="hero-title">FIND A <span>METHADONE CLINIC</span> NOW</h1>
-    <p class="hero-sub">Maryland opioid treatment programs (OTPs). See which clinics are accepting new
-      patients today, filter by county, medication, and insurance, then call to start intake.</p>
+    <div>
+      <h1 class="hero-title">FIND A <span>METHADONE CLINIC</span> NOW</h1>
+      <p class="hero-sub">Maryland opioid treatment programs (OTPs). See which clinics are accepting new
+        patients today, filter by county, medication, and insurance, then call to start intake.</p>
+    </div>
+
+    <!-- QUICK REFERRAL (Refer) — above the yellow help-line bar -->
+    <div class="qr-card">
+      <div class="qr-title">&#128203; Quick Referral</div>
+      <div id="qr-body">
+        <div class="qr-label">I am reaching out as a:</div>
+        <div class="qr-roles">
+          <button type="button" class="qr-role" onclick="qrRole(this,'Self / Patient')"><span>&#128100;</span>Self / Patient</button>
+          <button type="button" class="qr-role" onclick="qrRole(this,'Family Member')"><span>&#128106;</span>Family Member</button>
+          <button type="button" class="qr-role" onclick="qrRole(this,'Professional')"><span>&#128188;</span>Professional</button>
+        </div>
+        <input class="qr-input" id="qr-name" placeholder="Your name">
+        <input class="qr-input" id="qr-contact" placeholder="Phone or email to reach you">
+        <input class="qr-input" id="qr-county" placeholder="Preferred county / city (optional)">
+        <button type="button" class="qr-submit" onclick="qrSubmit()">Submit Referral</button>
+        <div class="qr-privacy">Private — no account needed.</div>
+      </div>
+    </div>
   </div>
 </section>
+
+<!-- YELLOW HELP-LINE BAR -->
+<div class="help-line">
+  <div class="help-line-inner">
+    <span class="help-line-label">&#128222; NEED HELP FINDING CARE?</span>
+    <div class="help-line-actions">
+      <a class="help-line-btn" href="tel:4434706405">&#9742; Call (443) 470-6405</a>
+      <a class="help-line-btn" href="sms:4434706405">&#128172; Text</a>
+    </div>
+  </div>
+</div>
 
 <main class="main">
   <div class="stats-row">
@@ -224,9 +280,10 @@ tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
     </div>
   </div>
 
+  <div class="result-count" id="result-count">Loading…</div>
+
   <div class="content-grid">
     <div class="table-wrap">
-      <div class="result-count" id="result-count">Loading…</div>
       <table class="clinic-table">
         <thead><tr>
           <th>CLINIC</th><th>COUNTY</th><th>STATUS</th><th>MEDICATIONS</th><th>CONTACT</th>
@@ -495,6 +552,19 @@ function render(){
 }
 
 function applyFilters(){ F.search=document.getElementById('search').value.trim(); render(); }
+
+/* ── Quick Referral (Refer) ── */
+let _qrRole='';
+function qrRole(el,role){ _qrRole=role; document.querySelectorAll('.qr-role').forEach(b=>b.classList.remove('on')); el.classList.add('on'); }
+function qrSubmit(){
+  const v=id=>(document.getElementById(id).value||'').trim();
+  const name=v('qr-name'), contact=v('qr-contact'), county=v('qr-county');
+  const su=encodeURIComponent('Referral request'+(_qrRole?' ('+_qrRole+')':''));
+  const body=encodeURIComponent('Role: '+(_qrRole||'—')+'\nName: '+(name||'—')+'\nContact: '+(contact||'—')+'\nPreferred area: '+(county||'—')+'\n\nPlease help connect this person with a Maryland methadone clinic accepting new patients.');
+  window.open('https://mail.google.com/mail/?view=cm&fs=1&to=info@marylandmethadone.help&su='+su+'&body='+body,'_blank');
+  document.getElementById('qr-body').innerHTML='<div class="qr-done">&#10003; Referral started</div>'+
+    '<div class="qr-privacy" style="margin-top:6px">Finish sending in the email window that opened — or call <a href="tel:4434706405" style="color:#1a1a1a;text-decoration:underline">(443) 470-6405</a>.</div>';
+}
 function pillToggle(group,el){ document.querySelectorAll('[data-'+group+']').forEach(p=>p.classList.remove('on')); el.classList.add('on'); }
 function setStatus(el,v){ pillToggle('status',el); F.status=v; render(); }
 function setMed(el,v){ pillToggle('med',el); F.med=v; render(); }
