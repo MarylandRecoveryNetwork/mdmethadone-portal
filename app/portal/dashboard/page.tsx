@@ -38,7 +38,7 @@ export default async function PortalDashboardPage() {
           <div style={{ fontFamily: "DM Mono, monospace", fontSize: 11, color: "#b8952a", marginBottom: 12 }}>NO CLINIC ASSIGNED</div>
           <p style={{ color: "#7a7060", fontSize: 15 }}>
             Your account is not yet linked to a clinic.<br />
-            Email <a href="mailto:admin@mdmethadone.help" style={{ color: "#b8952a" }}>admin@mdmethadone.help</a> to complete setup.
+            Email <a href="mailto:admin@marylandmethadone.help" style={{ color: "#b8952a" }}>admin@marylandmethadone.help</a> to complete setup.
           </p>
         </div>
       </div>

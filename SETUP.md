@@ -1,4 +1,4 @@
-# mdmethadone.help — Full Setup Walkthrough
+# marylandmethadone.help — Full Setup Walkthrough
 
 This walks you through standing up the new site on **GitHub**, **Supabase**, and **Vercel** —
 the same three services as mdaddiction.help. Use the **same logins** for each service; you're
@@ -44,7 +44,7 @@ straight to Part 1 and let Vercel build it, but installing these makes life easi
    cd "C:\Users\House Guest\Downloads\mdmethadone-portal"
    git init
    git add .
-   git commit -m "Initial commit — mdmethadone.help"
+   git commit -m "Initial commit — marylandmethadone.help"
    git branch -M main
    git remote add origin https://github.com/YOURNAME/mdmethadone-portal.git
    git push -u origin main
@@ -83,10 +83,10 @@ straight to Part 1 and let Vercel build it, but installing these makes life easi
 
 ### 2d. Tell Supabase where the site lives (auth redirect URLs)
 1. Left sidebar → **Authentication** → **URL Configuration**.
-2. **Site URL:** `https://www.mdmethadone.help`
+2. **Site URL:** `https://www.marylandmethadone.help`
 3. **Redirect URLs** — add each of these (click *Add URL* for each):
-   - `https://www.mdmethadone.help/auth/callback`
-   - `https://mdmethadone.help/auth/callback`
+   - `https://www.marylandmethadone.help/auth/callback`
+   - `https://marylandmethadone.help/auth/callback`
    - `http://localhost:3000/auth/callback` (for local testing)
 4. Click **Save**.
 
@@ -106,7 +106,7 @@ and `YOUR_ANON_OR_PUBLISHABLE_KEY`.
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://abcdefgh.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your anon key...
-   NEXT_PUBLIC_SITE_URL=https://www.mdmethadone.help
+   NEXT_PUBLIC_SITE_URL=https://www.marylandmethadone.help
    SUPABASE_SERVICE_ROLE_KEY=eyJ...your service_role key...
    ```
 2. **`public/tracker/index.html`** — near the bottom, the `SUPABASE_URL` and `SUPABASE_ANON`
@@ -135,7 +135,7 @@ git push
    |------|-------|
    | `NEXT_PUBLIC_SUPABASE_URL` | `https://abcdefgh.supabase.co` |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your anon key |
-   | `NEXT_PUBLIC_SITE_URL` | `https://www.mdmethadone.help` |
+   | `NEXT_PUBLIC_SITE_URL` | `https://www.marylandmethadone.help` |
    | `SUPABASE_SERVICE_ROLE_KEY` | your service_role key |
 5. Click **Deploy**. Wait ~2 min. You'll get a temporary URL like
    `mdmethadone-portal.vercel.app` — open it to confirm it loads.
@@ -145,7 +145,7 @@ git push
 ## Part 5 — Connect the domain you bought (10 min + DNS wait)
 
 1. In Vercel → your project → **Settings → Domains**.
-2. Type `mdmethadone.help` → **Add**. Then add `www.mdmethadone.help` too and set the **www**
+2. Type `marylandmethadone.help` → **Add**. Then add `www.marylandmethadone.help` too and set the **www**
    one as primary (or redirect — Vercel will offer this).
 3. Vercel shows the DNS records you need. Go to wherever you **bought the domain** (the
    registrar), open its DNS settings, and add what Vercel tells you — usually:
@@ -159,7 +159,7 @@ git push
 
 ## Part 6 — Create your admin login (5 min)
 
-1. Visit `https://www.mdmethadone.help/login` (or the vercel.app URL) → **Register** tab.
+1. Visit `https://www.marylandmethadone.help/login` (or the vercel.app URL) → **Register** tab.
    Sign up with your email + a password. You'll see "pending activation."
 2. In Supabase → **Authentication → Users**, confirm your user is listed (copy nothing — just confirm).
 3. In Supabase → **SQL Editor → New query**, run this (replace the email):
@@ -250,7 +250,7 @@ When a clinic wants to update its own status:
 ---
 
 ## Recap of what's separate vs. shared
-| | mdaddiction.help | mdmethadone.help |
+| | mdaddiction.help | marylandmethadone.help |
 |--|--|--|
 | GitHub account | same | **same** |
 | GitHub repo | mabt-full | **mdmethadone-portal** (new) |
@@ -258,7 +258,7 @@ When a clinic wants to update its own status:
 | Vercel project | (existing) | **mdmethadone-portal** (new) |
 | Supabase account | same | **same** |
 | Supabase project | qcxquthjeboizuzencqk | **new project** |
-| Domain | mdaddiction.help | **mdmethadone.help** |
+| Domain | mdaddiction.help | **marylandmethadone.help** |
 
 Nothing is shared at the data level — separate Supabase projects mean separate databases,
 separate users, separate everything. Only your *logins* to the three services are reused.

@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title,
     description,
-    alternates: { canonical: `https://www.mdmethadone.help/facilities/md/${slug}` },
+    alternates: { canonical: `https://www.marylandmethadone.help/facilities/md/${slug}` },
     openGraph: { title, description, type: "website" },
   };
 }
@@ -78,7 +78,7 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
     name: c.name,
     address: { "@type": "PostalAddress", streetAddress: c.address, addressLocality: c.city, addressRegion: "MD", postalCode: c.zip, addressCountry: "US" },
     telephone: c.phone_number || undefined,
-    url: c.website_url || `https://www.mdmethadone.help/facilities/md/${slug}`,
+    url: c.website_url || `https://www.marylandmethadone.help/facilities/md/${slug}`,
     medicalSpecialty: "Addiction Medicine",
     ...(c.lat != null && c.lng != null ? { geo: { "@type": "GeoCoordinates", latitude: c.lat, longitude: c.lng } } : {}),
   };
@@ -153,7 +153,7 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
               ? <div style={S.kv}>{c.description}</div>
               : <div style={S.muted}>{c.name} is a state-listed opioid treatment program (OTP) in {countyLabel(c.county)}, Maryland.</div>}
             <div style={{ ...S.note, marginTop: 12 }}>
-              Is this your clinic? <a href={`mailto:admin@mdmethadone.help?subject=Claim profile: ${encodeURIComponent(c.name)}`}>Claim this profile</a> to keep your status and details up to date.
+              Is this your clinic? <a href={`mailto:admin@marylandmethadone.help?subject=Claim profile: ${encodeURIComponent(c.name)}`}>Claim this profile</a> to keep your status and details up to date.
             </div>
           </div>
         </div>

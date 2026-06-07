@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Maryland Methadone Clinic Finder | mdmethadone.help",
+  title: "Maryland Methadone Clinic Finder | marylandmethadone.help",
   description:
     "Find a Maryland methadone / opioid treatment program (OTP) now. See which clinics are accepting new patients today. MAT for opioid use disorder.",
 };

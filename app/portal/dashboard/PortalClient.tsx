@@ -151,7 +151,7 @@ export default function PortalClient({ profile, clinic, initialStatus }: {
 
       {/* Footer */}
       <div style={S.footer}>
-        <div>mdmethadone.help · {profile.role}</div>
+        <div>marylandmethadone.help · {profile.role}</div>
         <div style={{ marginTop: 6 }}><a href="/find-clinic" style={{ color: "#b8952a", fontSize: 11 }}>View public finder →</a></div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 # Maryland Methadone Finder
-### mdmethadone.help
+### marylandmethadone.help
 
 Real-time directory of Maryland methadone clinics / opioid treatment programs (OTPs),
 showing which clinics are **accepting new patients** today.
@@ -31,7 +31,7 @@ Each clinic has one row in `clinic_status`:
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_OR_PUBLISHABLE_KEY
-NEXT_PUBLIC_SITE_URL=https://www.mdmethadone.help
+NEXT_PUBLIC_SITE_URL=https://www.marylandmethadone.help
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 ```
 

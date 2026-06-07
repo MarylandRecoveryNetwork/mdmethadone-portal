@@ -1,7 +1,7 @@
 {
   "name": "mdmethadone-portal",
   "version": "1.0.0",
-  "description": "Maryland Methadone Clinic Finder — mdmethadone.help",
+  "description": "Maryland Methadone Clinic Finder — marylandmethadone.help",
   "private": true,
   "scripts": {
     "dev": "next dev",

@@ -51,7 +51,7 @@ export default function LoginClient({
 
     if (!profile?.is_active) {
       await supabase.auth.signOut();
-      setMsg({ type: "error", text: "Account pending activation. Contact admin@mdmethadone.help" });
+      setMsg({ type: "error", text: "Account pending activation. Contact admin@marylandmethadone.help" });
       setLoading(false);
       return;
     }
@@ -97,7 +97,7 @@ export default function LoginClient({
       setMsg({
         type: "success",
         text: "Account created! An administrator will activate your access within 24 hours. " +
-              "Email admin@mdmethadone.help to expedite.",
+              "Email admin@marylandmethadone.help to expedite.",
       });
       setTab("login");
       setPassword("");
@@ -131,7 +131,7 @@ export default function LoginClient({
           <a href="/find-clinic" style={S.backLink}>← Back to Clinic Finder</a>
           <div style={S.brand}>
             <div style={S.brandName}>Maryland Methadone Finder</div>
-            <div style={S.brandSub}>mdmethadone.help · Staff Portal</div>
+            <div style={S.brandSub}>marylandmethadone.help · Staff Portal</div>
           </div>
           <div style={S.tagline}>
             Help patients find a clinic<br />that is accepting new admissions
