@@ -76,7 +76,7 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.name + " " + fullAddr)}`;
   const streetHref = c.lat != null && c.lng != null
     ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c.lat},${c.lng}` : null;
-  const referHref = `https://mail.google.com/mail/?view=cm&fs=1&to=info@marylandmethadone.help&su=${encodeURIComponent("Referral / Admissions Inquiry — " + c.name)}&body=${encodeURIComponent("I am inquiring about admissions / a referral for " + c.name + ".")}`;
+  const referHref = `https://mail.google.com/mail/?view=cm&fs=1&to=info@mdaddiction.help&su=${encodeURIComponent("Referral / Admissions Inquiry — " + c.name)}&body=${encodeURIComponent("I am inquiring about admissions / a referral for " + c.name + ".")}`;
   const osm = c.lat != null && c.lng != null
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${c.lng - 0.02}%2C${c.lat - 0.015}%2C${c.lng + 0.02}%2C${c.lat + 0.015}&layer=mapnik&marker=${c.lat}%2C${c.lng}`
     : null;
@@ -175,7 +175,7 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
               ? <div style={S.kv}>{c.description}</div>
               : <div style={S.muted}>{c.name} is a state-listed opioid treatment program (OTP) in {countyLabel(c.county)}, Maryland.</div>}
             <div style={{ ...S.note, marginTop: 12 }}>
-              Is this your clinic? <a href={`mailto:admin@marylandmethadone.help?subject=Claim profile: ${encodeURIComponent(c.name)}`}>Claim this profile</a> to keep your status and details up to date.
+              Is this your clinic? <a href={`mailto:info@mdaddiction.help?subject=Claim profile: ${encodeURIComponent(c.name)}`}>Claim this profile</a> to keep your status and details up to date.
             </div>
           </div>
         </div>

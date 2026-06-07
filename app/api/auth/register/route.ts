@@ -47,6 +47,6 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     success: true,
-    message: "Account created. An administrator will activate your access within 24 hours. Contact admin@marylandmethadone.help to expedite.",
+    message: "Account created. An administrator will activate your access within 24 hours. Contact info@mdaddiction.help to expedite.",
   });
 }

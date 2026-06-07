@@ -45,14 +45,14 @@ export async function GET(request: NextRequest) {
           is_active: false,
         });
         return NextResponse.redirect(
-          new URL(`/login?error=${encodeURIComponent("Account created — pending admin activation. Email admin@marylandmethadone.help")}`, requestUrl.origin)
+          new URL(`/login?error=${encodeURIComponent("Account created — pending admin activation. Email info@mdaddiction.help")}`, requestUrl.origin)
         );
       }
 
       if (!profile.is_active) {
         await supabase.auth.signOut();
         return NextResponse.redirect(
-          new URL(`/login?error=${encodeURIComponent("Account pending activation. Contact admin@marylandmethadone.help")}`, requestUrl.origin)
+          new URL(`/login?error=${encodeURIComponent("Account pending activation. Contact info@mdaddiction.help")}`, requestUrl.origin)
         );
       }
 

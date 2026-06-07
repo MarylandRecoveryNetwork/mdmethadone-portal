@@ -51,7 +51,7 @@ export default function LoginClient({
 
     if (!profile?.is_active) {
       await supabase.auth.signOut();
-      setMsg({ type: "error", text: "Account pending activation. Contact admin@marylandmethadone.help" });
+      setMsg({ type: "error", text: "Account pending activation. Contact info@mdaddiction.help" });
       setLoading(false);
       return;
     }
@@ -97,7 +97,7 @@ export default function LoginClient({
       setMsg({
         type: "success",
         text: "Account created! An administrator will activate your access within 24 hours. " +
-              "Email admin@marylandmethadone.help to expedite.",
+              "Email info@mdaddiction.help to expedite.",
       });
       setTab("login");
       setPassword("");

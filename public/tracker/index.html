@@ -197,7 +197,7 @@ tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
   </div>
 </header>
 
-<div class="preview-bar">★ Featured clinic listings now available — clinics, <a href="mailto:info@marylandmethadone.help?subject=Featured%20Listing%20Inquiry">reserve your spot &rarr;</a></div>
+<div class="preview-bar">★ Featured clinic listings now available — clinics, <a href="mailto:info@mdaddiction.help?subject=Featured%20Listing%20Inquiry">reserve your spot &rarr;</a></div>
 
 <section class="hero">
   <div class="hero-inner">
@@ -540,7 +540,7 @@ function render(){
           ${c.phone?`<a class="fc-btn primary" href="tel:${c.phone.replace(/[^0-9]/g,'')}">&#9742; Call</a>`:''}
           ${(c.lat!=null&&c.lng!=null)?`<a class="fc-btn" href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c.lat},${c.lng}" target="_blank" rel="noopener">&#127760; Street View</a>`:''}
           <a class="fc-btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((c.name||'')+', '+(c.address||'')+', '+(c.city||'')+', MD '+(c.zip||''))}" target="_blank" rel="noopener">&#129517; Directions</a>
-          <a class="fc-btn" href="https://mail.google.com/mail/?view=cm&fs=1&to=info@marylandmethadone.help&su=${encodeURIComponent('Referral / Admissions Inquiry — '+c.name)}&body=${encodeURIComponent('I am inquiring about admissions / a referral for '+c.name+'.')}" target="_blank" rel="noopener">&#9993; Refer</a>
+          <a class="fc-btn" href="https://mail.google.com/mail/?view=cm&fs=1&to=info@mdaddiction.help&su=${encodeURIComponent('Referral / Admissions Inquiry — '+c.name)}&body=${encodeURIComponent('I am inquiring about admissions / a referral for '+c.name+'.')}" target="_blank" rel="noopener">&#9993; Refer</a>
           ${c.website?`<a class="fc-btn" href="${c.website}" target="_blank" rel="noopener">&#127760; Website</a>`:''}
           <a class="fc-btn" href="/facilities/md/${c.slug}" target="_top">Details &rarr;</a>
         </div>
@@ -565,7 +565,7 @@ function qrSubmit(){
   const name=v('qr-name'), contact=v('qr-contact'), county=v('qr-county');
   const su=encodeURIComponent('Referral request'+(_qrRole?' ('+_qrRole+')':''));
   const body=encodeURIComponent('Role: '+(_qrRole||'—')+'\nName: '+(name||'—')+'\nContact: '+(contact||'—')+'\nPreferred area: '+(county||'—')+'\n\nPlease help connect this person with a Maryland methadone clinic accepting new patients.');
-  window.open('https://mail.google.com/mail/?view=cm&fs=1&to=info@marylandmethadone.help&su='+su+'&body='+body,'_blank');
+  window.open('https://mail.google.com/mail/?view=cm&fs=1&to=info@mdaddiction.help&su='+su+'&body='+body,'_blank');
   document.getElementById('qr-body').innerHTML='<div class="qr-done">&#10003; Referral started</div>'+
     '<div class="qr-privacy" style="margin-top:6px">Finish sending in the email window that opened — or call <a href="tel:4434706405" style="color:#1a1a1a;text-decoration:underline">(443) 470-6405</a>.</div>';
 }
