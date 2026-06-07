@@ -20,7 +20,6 @@ export default function LoginClient({
   const [fullName,  setFullName] = useState("");
   const [showPass,  setShowPass] = useState(false);
   const [loading,   setLoading]  = useState(false);
-  const [oauthLoad, setOauthLoad]= useState<string | null>(null);
   const [msg,       setMsg]      = useState<{ type: "error"|"success"; text: string } | null>(null);
   const [redirectTo, setRedirectTo] = useState("/find-clinic");
 
@@ -124,22 +123,6 @@ export default function LoginClient({
     setLoading(false);
   };
 
-  // ── OAuth ──────────────────────────────────────────────────────────────
-  const handleOAuth = async (provider: "google" | "azure") => {
-    setOauthLoad(provider);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: provider === "azure" ? "azure" : "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo}`,
-        scopes: provider === "azure" ? "openid email profile" : undefined,
-      },
-    });
-    if (error) {
-      setMsg({ type: "error", text: error.message });
-      setOauthLoad(null);
-    }
-  };
-
   return (
     <div style={S.page}>
       {/* ── LEFT PANEL ─────────────────────────────────────────── */}
@@ -210,23 +193,6 @@ export default function LoginClient({
                 onClick={() => { setTab("reset"); setMsg(null); }}>
                 Forgot password?
               </button>
-
-              {/* OAuth divider */}
-              <div style={S.divider}><span style={S.dividerTxt}>or continue with</span></div>
-              <div style={S.oauthRow}>
-                <button type="button" style={S.oauthBtn}
-                  onClick={() => handleOAuth("google")} disabled={!!oauthLoad}>
-                  {oauthLoad === "google" ? "Redirecting…" : (
-                    <><span style={S.oauthIcon}>G</span> Google</>
-                  )}
-                </button>
-                <button type="button" style={S.oauthBtn}
-                  onClick={() => handleOAuth("azure")} disabled={!!oauthLoad}>
-                  {oauthLoad === "azure" ? "Redirecting…" : (
-                    <><span style={S.oauthIcon}>M</span> Microsoft</>
-                  )}
-                </button>
-              </div>
               <p style={S.note}>
                 No account? <button type="button" style={S.inlineLink}
                   onClick={() => setTab("register")}>Register your clinic</button>
