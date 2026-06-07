@@ -135,7 +135,8 @@ select
     when s.updated_at > now() - interval '7 days'      then 'live'
     when s.updated_at > now() - interval '30 days'     then 'warning'
     else 'stale'
-  end as freshness_status
+  end as freshness_status,
+  c.description
 from public.clinics c
 left join public.clinic_status s on s.clinic_id = c.id
 where c.is_active = true;

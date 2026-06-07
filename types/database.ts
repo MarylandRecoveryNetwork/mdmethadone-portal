@@ -133,6 +133,7 @@ export interface LiveStatusRow {
   waitlist_note: string | null;
   status_updated_at: string | null;
   freshness_status: FreshnessStatus;
+  description: string | null;
 }
 
 // ── API PAYLOADS ──────────────────────────────────────────

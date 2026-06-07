@@ -93,7 +93,8 @@ body{font-family:var(--font-body);background:var(--surface);color:var(--text);fo
 .clinic-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .clinic-table tr:last-child td{border-bottom:none;}
 .clinic-table tr:hover td{background:var(--surface);}
-.cname{font-weight:600;font-size:13px;}
+.cname{font-weight:600;font-size:13px;color:var(--text);text-decoration:none;cursor:pointer;}
+a.cname:hover{color:var(--gold-dim);text-decoration:underline;}
 .caddr{font-size:11px;color:var(--muted);margin-top:2px;}
 .county-tag{font-size:10px;color:var(--muted);font-family:var(--font-mono);}
 .med-tag{font-size:9px;padding:2px 5px;border-radius:2px;display:inline-block;background:var(--gold-bg);color:var(--gold-dim);
@@ -400,8 +401,8 @@ function renderMap(list){
     const mk=L.circleMarker([c.lat,c.lng],{
       radius:7,color:'#fff',weight:1.5,fillColor:colorFor(s),fillOpacity:.95
     }).addTo(map);
-    mk.bindPopup('<b>'+c.name+'</b><br>'+(c.city||'')+', '+c.county+'<br><b style="color:'+colorFor(s)+'">'+statusLabel(s)+'</b><br>'+
-      (c.phone?'<a href="tel:'+c.phone+'">'+c.phone+'</a>':''));
+    mk.bindPopup('<a href="/facilities/md/'+c.slug+'" target="_top"><b>'+c.name+'</b></a><br>'+(c.city||'')+', '+c.county+'<br><b style="color:'+colorFor(s)+'">'+statusLabel(s)+'</b><br>'+
+      (c.phone?'<a href="tel:'+c.phone+'">'+c.phone+'</a> &middot; ':'')+'<a href="/facilities/md/'+c.slug+'" target="_top">View details →</a>');
     markers.push(mk);
   });
 }
@@ -424,7 +425,7 @@ function render(){
     const s=statusOf(c.slug); const st=STATUS[c.slug]||{};
     const medTags = meds(c).map(m=>'<span class="med-tag">'+m+'</span>').join('');
     return `<tr>
-      <td><div class="cname">${c.name}</div><div class="caddr">${c.address||''}${c.city?', '+c.city:''} ${c.zip||''}</div></td>
+      <td><a class="cname" href="/facilities/md/${c.slug}" target="_top">${c.name}</a><div class="caddr">${c.address||''}${c.city?', '+c.city:''} ${c.zip||''}</div></td>
       <td><span class="county-tag">${c.county}</span></td>
       <td>
         <span class="status-badge sb-${s}"><span class="sdot sdot-${s}"></span>${statusLabel(s)}</span>
