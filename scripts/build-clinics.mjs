@@ -131,7 +131,9 @@ for (const r of rows) {
     buprenorphine: false,   // unknown from source — clinic can toggle on
     naltrexone: false,      // unknown from source
     medicaid: true,         // MD Medicaid covers OTP; nearly all accept it
-    medicare: false, private: false, sliding: false, uninsured: false, telehealth: false,
+    private: true,          // most MD OTPs bill major commercial plans
+    uninsured: true,        // self-pay accepted
+    medicare: false, sliding: false, telehealth: false,
     is_active: true,
     is_verified: /certified/i.test(cert),
   });

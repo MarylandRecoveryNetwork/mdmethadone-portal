@@ -11,6 +11,16 @@ const STATUS_META: Record<string, { label: string; color: string; blurb: string 
   not_accepting: { label: "Not Accepting Patients", color: "#e03e3e", blurb: "This clinic is not taking new patients right now. Call to confirm or check back later." },
 };
 
+// Major commercial health plans operating in Maryland (informational).
+const MD_PRIVATE_INSURERS = [
+  "CareFirst BlueCross BlueShield",
+  "Aetna",
+  "Cigna",
+  "UnitedHealthcare / Optum",
+  "Kaiser Permanente",
+  "Carelon Behavioral Health",
+];
+
 function countyLabel(county: string): string {
   return county === "Baltimore City" ? "Baltimore City" : `${county} County`;
 }
@@ -59,8 +69,8 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
     c.accepts_medicaid && "Medicaid",
     c.accepts_medicare && "Medicare",
     c.accepts_private && "Private insurance",
+    c.uninsured_ok && "Self-pay",
     c.sliding_scale && "Sliding scale",
-    c.uninsured_ok && "Uninsured / self-pay",
   ].filter(Boolean) as string[];
   const fullAddr = [c.address, c.city, "MD", c.zip].filter(Boolean).join(", ");
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.name + " " + fullAddr)}`;
@@ -137,6 +147,13 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
             {pays.length ? <div style={S.tags}>{pays.map(p => <span key={p} style={S.tag}>{p}</span>)}</div>
               : <div style={S.muted}>Call to ask about insurance and payment options.</div>}
             {c.telehealth && <div style={{ ...S.tag, marginTop: 10, display: "inline-block", background: "#e7f0ff", color: "#1a4fa0", borderColor: "#b9d2ff" }}>Telehealth available</div>}
+            {c.accepts_private && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Major Maryland plans commonly accepted:</div>
+                <div style={S.tags}>{MD_PRIVATE_INSURERS.map(p => <span key={p} style={S.tag}>{p}</span>)}</div>
+                <div style={S.note}>Verify your specific plan and copay with the clinic before your first visit.</div>
+              </div>
+            )}
           </div>
 
           <div style={S.card}>
