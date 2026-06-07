@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Find a Methadone Clinic Now | Maryland OTP Finder | mdmethadone.help</title>
+<meta name="description" content="Real-time directory of Maryland methadone clinics and opioid treatment programs. See which clinics are accepting new patients today. Filter by county, medication, and insurance.">
+
+<!-- ═══════════════════════════════════════════════════════
+     HOW THIS FILE WORKS
+     ═══════════════════════════════════════════════════════
+     1. The CLINICS array near the bottom holds the static
+        clinic directory (name, address, county, services).
+        >>> PASTE YOUR GEMINI-GENERATED CLINIC DATA THERE <<<
+     2. Live "accepting new patients" status is pulled from
+        Supabase view  v_methadone_live_status  and matched to
+        each clinic by its `slug`.
+     3. Set SUPABASE_URL and SUPABASE_ANON below after you
+        create your Supabase project (Settings → API).
+     ═══════════════════════════════════════════════════════ -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --gold:#FFB81C; --gold-dim:#c98d00; --gold-bg:rgba(255,184,28,.10);
+  --red:#E03E3E; --red-bg:rgba(224,62,62,.09);
+  --black:#1a1a1a; --black2:#262626;
+  --surface:#f7f6f2; --surface2:#ede9e0; --border:rgba(26,26,26,.12);
+  --text:#1a1a1a; --muted:#6b6760; --green:#1db954; --blue:#2563EB;
+  --font-display:'Bebas Neue',sans-serif; --font-body:'DM Sans',sans-serif; --font-mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--surface);color:var(--text);font-size:14px;line-height:1.6;}
+
+/* topbar */
+.topbar{background:var(--black2);display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.5rem;height:48px;border-bottom:3px solid;border-image:linear-gradient(to right,var(--red),var(--gold)) 1;position:sticky;top:0;z-index:1000;}
+.topbar-brand{display:flex;align-items:center;gap:10px;}
+.topbar-logo{font-family:var(--font-display);font-size:20px;color:var(--gold);letter-spacing:1px;text-decoration:none;}
+.topbar-sub{font-size:10px;color:#888;font-family:var(--font-mono);border:1px solid #444;padding:2px 6px;border-radius:2px;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.crisis-btn{background:var(--red);color:#fff;padding:5px 12px;border-radius:3px;font-size:11px;font-weight:600;text-decoration:none;}
+.live-status{display:flex;align-items:center;gap:6px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.live-txt{font-family:var(--font-mono);font-size:10px;color:var(--green);}
+
+/* hero */
+.hero{background:var(--black2);padding:1.75rem 1.5rem;}
+.hero-inner{max-width:1200px;margin:0 auto;}
+.hero-title{font-family:var(--font-display);font-size:40px;line-height:1;color:#fff;letter-spacing:1px;}
+.hero-title span{color:var(--gold);}
+.hero-sub{font-size:13px;color:#999;margin-top:8px;max-width:640px;}
+
+/* main */
+.main{max-width:1200px;margin:0 auto;padding:1.25rem;}
+
+/* stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
+.stat-card{background:var(--black2);border-radius:4px;padding:12px 14px;border-top:2px solid;}
+.stat-card.g{border-top-color:var(--gold);} .stat-card.gr{border-top-color:var(--green);}
+.stat-card.y{border-top-color:#d4af4f;} .stat-card.r{border-top-color:var(--red);}
+.sc-label{font-family:var(--font-mono);font-size:9px;color:#666;letter-spacing:1px;margin-bottom:4px;}
+.sc-val{font-family:var(--font-display);font-size:28px;line-height:1;}
+.stat-card.g .sc-val{color:var(--gold);} .stat-card.gr .sc-val{color:var(--green);}
+.stat-card.y .sc-val{color:#d4af4f;} .stat-card.r .sc-val{color:var(--red);}
+
+/* filters */
+.filter-section{background:#fff;border:1px solid var(--border);border-radius:4px;padding:12px 16px;margin-bottom:1rem;}
+.filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;}
+.filter-row:last-child{margin-bottom:0;}
+.fl{font-size:10px;font-family:var(--font-mono);color:var(--muted);white-space:nowrap;padding-right:4px;min-width:74px;}
+.filter-pill{font-size:11px;padding:4px 10px;border-radius:2px;cursor:pointer;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-family:var(--font-mono);transition:all .12s;white-space:nowrap;}
+.filter-pill:hover{background:var(--surface);}
+.filter-pill.on{background:var(--black2);color:var(--gold);border-color:var(--black2);}
+.search-input{flex:1;min-width:160px;border:1px solid var(--border);border-radius:3px;padding:7px 10px;font-size:13px;font-family:var(--font-body);outline:none;}
+.search-input:focus{border-color:var(--gold);}
+
+/* layout */
+.content-grid{display:grid;grid-template-columns:1fr 380px;gap:1rem;}
+
+/* table */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.result-count{font-family:var(--font-mono);font-size:10px;color:var(--muted);padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);}
+.clinic-table{width:100%;border-collapse:collapse;font-size:12px;}
+.clinic-table thead{background:var(--black2);}
+.clinic-table th{padding:9px 12px;text-align:left;font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:#666;font-weight:400;}
+.clinic-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.clinic-table tr:last-child td{border-bottom:none;}
+.clinic-table tr:hover td{background:var(--surface);}
+.cname{font-weight:600;font-size:13px;}
+.caddr{font-size:11px;color:var(--muted);margin-top:2px;}
+.county-tag{font-size:10px;color:var(--muted);font-family:var(--font-mono);}
+.med-tag{font-size:9px;padding:2px 5px;border-radius:2px;display:inline-block;background:var(--gold-bg);color:var(--gold-dim);
+  border:1px solid rgba(255,184,28,.3);margin:1px;white-space:nowrap;}
+
+/* status badge */
+.status-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:10px;font-weight:500;
+  padding:4px 9px;border-radius:3px;white-space:nowrap;}
+.sb-accepting{background:rgba(29,185,84,.12);color:#127a38;border:1px solid rgba(29,185,84,.4);}
+.sb-waitlist{background:rgba(212,175,79,.14);color:#8a6d12;border:1px solid rgba(212,175,79,.45);}
+.sb-not_accepting{background:var(--red-bg);color:var(--red);border:1px solid rgba(224,62,62,.4);}
+.sb-unknown{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.sdot-accepting{background:var(--green);animation:pulse 2s infinite;}
+.sdot-waitlist{background:#d4af4f;}
+.sdot-not_accepting{background:var(--red);}
+.sdot-unknown{background:#bbb;}
+.wait-note{font-size:9px;color:var(--muted);margin-top:3px;font-family:var(--font-mono);}
+.fresh{font-size:9px;color:#999;font-family:var(--font-mono);margin-top:2px;}
+
+.call-btn{font-family:var(--font-mono);font-size:11px;padding:6px 10px;border-radius:2px;cursor:pointer;
+  background:var(--gold);color:var(--black2);border:none;font-weight:500;text-decoration:none;display:inline-block;}
+.call-btn:hover{background:var(--gold-dim);color:#fff;}
+.web-link{font-family:var(--font-mono);font-size:10px;color:var(--blue);display:block;margin-top:4px;}
+
+/* map */
+.map-panel{display:flex;flex-direction:column;gap:10px;position:sticky;top:60px;align-self:start;}
+.map-box{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.map-header{background:var(--black2);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
+.map-title{font-family:var(--font-display);font-size:14px;color:var(--gold);letter-spacing:1px;}
+#md-map{height:420px;}
+.map-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 12px;background:var(--surface);border-top:1px solid var(--border);}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:var(--font-mono);}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+.empty{padding:2rem;text-align:center;color:var(--muted);font-size:13px;}
+.footer-note{max-width:1200px;margin:1rem auto 2rem;padding:0 1.25rem;font-size:11px;color:var(--muted);line-height:1.7;}
+
+@media(max-width:900px){
+  .content-grid{grid-template-columns:1fr;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .map-panel{position:static;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <a href="https://www.mdmethadone.help" class="topbar-logo">MD METHADONE</a>
+    <span class="topbar-sub">mdmethadone.help</span>
+  </div>
+  <div class="topbar-right">
+    <div class="live-status"><div class="live-dot"></div><span class="live-txt">LIVE</span></div>
+    <a href="tel:988" class="crisis-btn">&#9888; CRISIS: 988</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <h1 class="hero-title">FIND A <span>METHADONE CLINIC</span> NOW</h1>
+    <p class="hero-sub">Maryland opioid treatment programs (OTPs). See which clinics are accepting new
+      patients today, filter by county, medication, and insurance, then call to start intake.</p>
+  </div>
+</section>
+
+<main class="main">
+  <div class="stats-row">
+    <div class="stat-card g"><div class="sc-label">CLINICS LISTED</div><div class="sc-val" id="stat-total">0</div></div>
+    <div class="stat-card gr"><div class="sc-label">ACCEPTING NOW</div><div class="sc-val" id="stat-accepting">0</div></div>
+    <div class="stat-card y"><div class="sc-label">WAITLIST</div><div class="sc-val" id="stat-waitlist">0</div></div>
+    <div class="stat-card r"><div class="sc-label">COUNTIES</div><div class="sc-val" id="stat-counties">0</div></div>
+  </div>
+
+  <div class="filter-section">
+    <div class="filter-row">
+      <span class="fl">SEARCH</span>
+      <input class="search-input" id="search" placeholder="Clinic name, city, or ZIP…" oninput="applyFilters()">
+    </div>
+    <div class="filter-row">
+      <span class="fl">STATUS</span>
+      <span class="filter-pill on" data-status="all" onclick="setStatus(this,'all')">All</span>
+      <span class="filter-pill" data-status="accepting" onclick="setStatus(this,'accepting')">Accepting</span>
+      <span class="filter-pill" data-status="waitlist" onclick="setStatus(this,'waitlist')">Waitlist</span>
+    </div>
+    <div class="filter-row">
+      <span class="fl">MEDICATION</span>
+      <span class="filter-pill on" data-med="all" onclick="setMed(this,'all')">All</span>
+      <span class="filter-pill" data-med="methadone" onclick="setMed(this,'methadone')">Methadone</span>
+      <span class="filter-pill" data-med="buprenorphine" onclick="setMed(this,'buprenorphine')">Buprenorphine</span>
+      <span class="filter-pill" data-med="naltrexone" onclick="setMed(this,'naltrexone')">Naltrexone</span>
+    </div>
+    <div class="filter-row">
+      <span class="fl">PAYMENT</span>
+      <span class="filter-pill on" data-pay="all" onclick="setPay(this,'all')">All</span>
+      <span class="filter-pill" data-pay="medicaid" onclick="setPay(this,'medicaid')">Medicaid</span>
+      <span class="filter-pill" data-pay="medicare" onclick="setPay(this,'medicare')">Medicare</span>
+      <span class="filter-pill" data-pay="uninsured" onclick="setPay(this,'uninsured')">Uninsured OK</span>
+      <span class="filter-pill" data-pay="sliding" onclick="setPay(this,'sliding')">Sliding scale</span>
+    </div>
+    <div class="filter-row" id="county-row">
+      <span class="fl">COUNTY</span>
+      <span class="filter-pill on" data-county="all" onclick="setCounty(this,'all')">All</span>
+      <!-- county pills injected by JS -->
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <div class="table-wrap">
+      <div class="result-count" id="result-count">Loading…</div>
+      <table class="clinic-table">
+        <thead><tr>
+          <th>CLINIC</th><th>COUNTY</th><th>STATUS</th><th>MEDICATIONS</th><th></th>
+        </tr></thead>
+        <tbody id="clinic-tbody"></tbody>
+      </table>
+      <div class="empty" id="empty-msg" style="display:none">No clinics match your filters.</div>
+    </div>
+
+    <div class="map-panel">
+      <div class="map-box">
+        <div class="map-header">
+          <span class="map-title">MARYLAND MAP</span>
+          <span style="font-family:var(--font-mono);font-size:9px;color:#666">Tap a pin</span>
+        </div>
+        <div id="md-map"></div>
+        <div class="map-legend">
+          <div class="leg-item"><span class="leg-dot" style="background:#1db954"></span>Accepting</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#d4af4f"></span>Waitlist</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#e03e3e"></span>Not accepting</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#bbb"></span>Unknown</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="footer-note">
+  This directory is informational and updated by participating clinics. Always call ahead to confirm
+  current availability and intake requirements. If you are in crisis, call or text <b>988</b>.
+  Maryland 211 also provides 24/7 referral help — dial <b>211</b>.
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   SUPABASE CONFIG — fill these in after creating your project
+   (Supabase → Settings → API). Until then the site shows the
+   static directory with "status unknown".
+   ═══════════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://YOUR_PROJECT_REF.supabase.co';
+const SUPABASE_ANON = 'YOUR_ANON_OR_PUBLISHABLE_KEY';
+
+let supabaseClient = null;
+if (SUPABASE_URL && !SUPABASE_URL.includes('YOUR_PROJECT_REF')) {
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CLINIC DIRECTORY  —  PASTE GEMINI DATA HERE
+   ───────────────────────────────────────────────────────
+   Each clinic needs a UNIQUE `slug`. The same slug must be
+   used in Supabase (clinics.slug) so live status matches up.
+   region: Central | Western | Capital | Southern | Eastern
+   The booleans control the filter pills.
+   ═══════════════════════════════════════════════════════ */
+const CLINICS = [
+  { slug:"serenity-health-llc-aberdeen-780", name:"Serenity Health, LLC", address:"780 W. Bel Air Ave Suite B", city:"Aberdeen", county:"Harford", region:"Central", zip:"21001", lat:39.51179, lng:-76.17592, phone:"(410) 273-1030", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"ars-of-aberdeen-llc-aberdeen-24", name:"ARS of Aberdeen LLC", address:"24-26 West Bel Air Ave.", city:"Aberdeen", county:"Harford", region:"Central", zip:"21001", lat:39.49811, lng:-76.15375, phone:"(410) 272-0230", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"new-journey-incorporated-annapolis-32", name:"New Journey, Incorporated", address:"32 Defense Street", city:"Annapolis", county:"Anne Arundel", region:"Central", zip:"21401", lat:38.98896, lng:-76.49643, phone:"(443) 949-7150", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"anne-arundel-county-department-of-health-annapolis-711", name:"Anne Arundel County Department of Health", address:"711 Bestgate Road", city:"Annapolis", county:"Anne Arundel", region:"Central", zip:"21401", lat:38.96814, lng:-76.50501, phone:"(410) 222-0100", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"heritage-treatment-center-baltimore-4200", name:"HERITAGE TREATMENT CENTER", address:"4200 EDMONDSON AVE Suite 102", city:"BALTIMORE", county:"Baltimore City", region:"Central", zip:"21229", lat:39.28554, lng:-76.60458, phone:"(443) 224-0655", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"orleans-health-llc-baltimore-2323", name:"Orleans Health LLC", address:"2323 Orleans st", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21224", lat:39.30156, lng:-76.60965, phone:"410-779-9909", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"redeem-healthcare-and-medical-sysyems-ii-inc-baltimore-2127", name:"REDEEM HEALTHCARE AND MEDICAL SYSYEMS II INC", address:"2127 WEST PRATT STREET", city:"BALTIMORE", county:"Baltimore City", region:"Central", zip:"21223", lat:39.30513, lng:-76.62261, phone:"443-629-2435", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"tuerk-house-inc-baltimore-730", name:"Tuerk House Inc.", address:"730 Ashburton St.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21216", lat:39.30276, lng:-76.60008, phone:"(443) 826-1781", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"concerted-care-group-brooklyn-baltimore-112", name:"Concerted Care Group Brooklyn", address:"112 E. Patapsco Ave", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21225", lat:39.27933, lng:-76.59777, phone:"667-260-2651", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"dundalk-health-services-inc-baltimore-6706", name:"Dundalk Health Services, Inc.", address:"6706 Holabird Avenue", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21222", lat:39.29505, lng:-76.59879, phone:"(410) 650-2413", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"redeem-health-care-medical-systems-inc-baltimore-917", name:"Redeem Health Care Medical Systems, INC", address:"917 N. Caroline Street", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21205", lat:39.28911, lng:-76.61295, phone:"410-522-1030", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"omnis-health-life-llc-baltimore-2200", name:"Omnis Health Life, LLC", address:"2200 Garrison Blvd.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21216", lat:39.28464, lng:-76.60923, phone:"240-204-5594", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"winchester-health-llc-baltimore-1315", name:"Winchester Health LLC", address:"1315 Bloomingdale Rd", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21209", lat:39.29316, lng:-76.62615, phone:"410-624-7111", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"glass-health-programs-inc-baltimore-1801", name:"Glass Health Programs, Inc.", address:"1801 Cherry Hill Road", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21230", lat:39.28851, lng:-76.62705, phone:"(410) 354-2800", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"oshin-amor-recovery-center-l-l-c-baltimore-2300", name:"Oshin Amor Recovery Center L.L.C.", address:"2300 Garrison Blvd STE 250", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21216", lat:39.2886, lng:-76.60203, phone:"(443) 760-1479", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"charm-city-medical-center-inc-baltimore-2220", name:"CHARM CITY MEDICAL CENTER INC", address:"2220 Reisterstown Road", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21217", lat:39.28509, lng:-76.60572, phone:"(443) 535-9979", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"wellness-rx-corp-baltimore-4538", name:"Wellness RX, Corp.", address:"4538 Edmondson Ave.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21229", lat:39.28062, lng:-76.61175, phone:"667-217-1930", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"divine-mercy-inc-baltimore-1721", name:"Divine Mercy, Inc.", address:"1721 Pennsylvania Avenue", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21217", lat:39.2928, lng:-76.61568, phone:"(410) 685-2830", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"ummc-mtc-center-for-addiction-medicine-baltimore-827", name:"UMMC MTC CENTER FOR ADDICTION MEDICINE", address:"827 LINDEN AVENUE", city:"BALTIMORE", county:"Baltimore City", region:"Central", zip:"21201", lat:39.29172, lng:-76.61271, phone:"(410) 225-8240", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"cornerstone-treatment-center-inc-baltimore-1806", name:"Cornerstone Treatment Center Inc", address:"1806 Pennsylvania Avenue", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21217", lat:39.27888, lng:-76.61829, phone:"410-630-1090", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"b-n-j-health-services-llc-baltimore-5246", name:"B.N.J. HEALTH SERVICES, LLC", address:"5246 REISTERSTOWN ROAD", city:"BALTIMORE", county:"Baltimore City", region:"Central", zip:"21215", lat:39.29373, lng:-76.60836, phone:"(410) 299-2039", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"northern-parkway-treatment-services-inc-baltimore-3007", name:"Northern Parkway Treatment Services, Inc.", address:"3007 E Northern Parkway", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21214", lat:39.29097, lng:-76.6056, phone:"(443) 475-0737", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"concerted-care-group-baltimore-llc-baltimore-428", name:"Concerted Care Group Baltimore, LLC", address:"428 E. 25th Street", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21218", lat:39.27684, lng:-76.6065, phone:"(410) 617-0142", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"glass-health-programs-inc-baltimore-817", name:"Glass Health Programs, Inc.", address:"817 N. Calvert Street", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21202", lat:39.29385, lng:-76.62249, phone:"443-290-6424", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"b-n-j-health-services-llc-washington-blvd-baltimore-2701", name:"B.N.J. Health Services, LLC (Washington Blvd)", address:"2701 Washington Blvd.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21230", lat:39.29226, lng:-76.59939, phone:"(410) 624-7894", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"park-heights-health-services-inc-baltimore-5260", name:"Park Heights Health Services, Inc.", address:"5260A Park Heights Ave", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21215-5141", lat:39.29964, lng:-76.61682, phone:"(410) 999-6299", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"belair-health-solutions-inc-baltimore-4825", name:"Belair Health Solutions, Inc.", address:"4825 Belair Road", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21206", lat:39.29073, lng:-76.62474, phone:"410-509-0205", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"university-of-maryland-medical-center-llc-baltimore-1001", name:"University of Maryland Medical Center LLC", address:"1001 West Pratt Street", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21223", lat:39.27849, lng:-76.60182, phone:"(443) 462-3400", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"reflective-treatment-center-baltimore-301", name:"Reflective Treatment Center", address:"301 North Gay Street", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21202", lat:39.28827, lng:-76.60434, phone:"(410) 752-3500", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"by-grace-counseling-services-baltimore-1002", name:"By Grace Counseling Services", address:"1002 Patapsco Ave", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21225", lat:39.28872, lng:-76.60845, phone:"(410) 355-3711", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"hampden-health-solutions-at-the-rail-inc-baltimore-3612", name:"Hampden Health Solutions at the Rail, Inc.", address:"3612 Falls Rd", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21211", lat:39.28953, lng:-76.62564, phone:"(410) 467-4357", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"eastern-avenue-health-solutions-inc-baltimore-5920", name:"Eastern Avenue Health Solutions, Inc.", address:"5920 Eastern Avenue", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21224", lat:39.30516, lng:-76.61385, phone:"(410) 631-2772", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"man-alive-inc-baltimore-2117", name:"Man Alive,  Inc.", address:"2117 Maryland Ave.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21218", lat:39.29778, lng:-76.60245, phone:"(410) 837-4292", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"glenwood-life-counseling-center-inc-baltimore-516", name:"Glenwood Life Counseling Center, Inc.", address:"516 Glenwood Ave.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21212", lat:39.27732, lng:-76.60923, phone:"410-323-9811", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"sinai-hospital-addictions-recovery-program-baltimore-2440", name:"Sinai Hospital Addictions Recovery Program", address:"2440 Cylburn Ave", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21215", lat:39.28794, lng:-76.60083, phone:"(410) 601-5355", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"veterans-administration-maryland-health-care-system-opioid-a", name:"Veterans Administration Maryland Health Care System Opioid Agonist Treatment Program (VAMHCS OATP)", address:"10 North Greene St.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21201", lat:39.29547, lng:-76.62537, phone:"(410) 605-7357", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"grace-medical-center-new-hope-treatment-center-baltimore-240", name:"Grace Medical Center- New Hope Treatment Center", address:"2401 West Baltimore St.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21223", lat:39.28086, lng:-76.62315, phone:"(410) 945-7706", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"johns-hopkins-hospital-program-for-alcoholism-and-other-drug", name:"Johns Hopkins Hospital Program for Alcoholism and Other Drug Dependencies", address:"911 North Broadway", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21205", lat:39.29559, lng:-76.60845, phone:"(410) 955-5439", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"institutes-for-behavioral-resources-inc-baltimore-2104", name:"Institutes for Behavioral Resources, Inc.", address:"2104 Maryland Ave.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21218", lat:39.29178, lng:-76.60659, phone:"410-752-6080", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"glass-health-programs-inc-baltimore-821", name:"Glass Health Programs, Inc.", address:"821 North Eutaw St., Suite 201", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21201", lat:39.29409, lng:-76.61997, phone:"(410) 225-9185", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"addiction-treatment-services-at-johns-hopkins-bayview-mfl-bu", name:"Addiction Treatment Services at Johns Hopkins Bayview - MFL Building", address:"Mason F Lord Building, Floor 6-E, 5200 Eastern Ave", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21224", lat:39.28371, lng:-76.61553, phone:"(410) 550-0051", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"ats-of-cecil-county-llc-baltimore-3455", name:"ATS of Cecil County, LLC", address:"3455 Wilkens Ave., Lower Level 20", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21229", lat:39.29415, lng:-76.62333, phone:"(410) 646-6970", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"turning-point-substance-abuse-clinic-baltimore-2401", name:"Turning Point Substance Abuse Clinic", address:"2401 E. North Ave.", city:"Baltimore", county:"Baltimore City", region:"Central", zip:"21213", lat:39.28596, lng:-76.62468, phone:"410-675-2113", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"veni-vidi-vici-treatment-services-llc-bel-air-4", name:"Veni Vidi Vici Treatment Services, LLC.", address:"4B North Avenue, Suite 302", city:"Bel Air", county:"Harford", region:"Central", zip:"21014", lat:39.5269, lng:-76.35634, phone:"443-819-3172", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"bel-air-recovery-center-llc-bel-air-2014", name:"Bel Air Recovery Center, LLC", address:"2014 Tollgate Rd", city:"Bel Air", county:"Harford", region:"Central", zip:"21015", lat:39.54349, lng:-76.35922, phone:"(443) 388-3137", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"glass-health-programs-inc-belcamp-1361", name:"Glass Health Programs, Inc.", address:"1361 Brass Mill Road", city:"Belcamp", county:"Harford", region:"Central", zip:"21017", lat:39.48425, lng:-76.22354, phone:"(410) 273-9700", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"bph-inc-t-a-starting-point-brooklyn-park-4109", name:"BPH, Inc. t/a Starting Point", address:"4109 Ritchie Highway", city:"Brooklyn Park", county:"Anne Arundel", region:"Central", zip:"21225", lat:39.23189, lng:-76.61041, phone:"(410) 609-0040", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"kenah-one-health-care-services-chestertown-521", name:"Kenah One Health Care Services", address:"521 Washington Avenue", city:"Chestertown", county:"Kent", region:"Eastern", zip:"21620", lat:39.1955, lng:-76.07282, phone:"", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"srr-treatment-solutions-columbia-8930", name:"SRR Treatment Solutions", address:"8930 Stanford Blvd", city:"Columbia", county:"Howard", region:"Central", zip:"21046", lat:39.19356, lng:-76.86013, phone:"(443) 285-0807", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"concerted-care-group-cumberland-llc-cumberland-1050", name:"Concerted Care Group Cumberland, LLC", address:"1050 W Industrial Blvd", city:"Cumberland", county:"Allegany", region:"Western", zip:"21502", lat:39.64807, lng:-78.7595, phone:"(240) 410-0885", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"western-maryland-recovery-services-cumberland-11604", name:"Western Maryland Recovery Services", address:"11604 Bedford Road", city:"Cumberland", county:"Allegany", region:"Western", zip:"21502", lat:39.65995, lng:-78.77558, phone:"301-724-1144", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"bd-health-services-inc-dundalk-3955", name:"BD Health Services, Inc", address:"3955 Old North Point Road", city:"Dundalk", county:"Baltimore", region:"Central", zip:"21222", lat:39.24406, lng:-76.51006, phone:"(410) 477-0744", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"314-grove-neck-opco-llc-earleville-314", name:"314 Grove Neck Opco, LLC", address:"314 Grove Neck Rd", city:"Earleville", county:"Cecil", region:"Eastern", zip:"21919", lat:39.41572, lng:-75.92863, phone:"(410) 275-6200", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"b-n-j-health-services-llc-easton-easton-505", name:"B.N.J. HEALTH SERVICES, LLC (EASTON)", address:"505 Dutchmans Lane Suite B-2", city:"Easton", county:"Talbot", region:"Eastern", zip:"21601", lat:38.76122, lng:-76.08266, phone:"(410) 763-9040", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"chesapeake-treatment-services-llc-easton-402", name:"Chesapeake Treatment Services LLC", address:"402 Marvel Ct", city:"Easton", county:"Talbot", region:"Eastern", zip:"21601", lat:38.78639, lng:-76.06556, phone:"(410) 822-7150", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"riverside-treatment-services-edgewood-llc-edgewood-2205", name:"Riverside Treatment Services Edgewood, LLC", address:"2205 Pulaski Hwy", city:"Edgewood", county:"Harford", region:"Central", zip:"21040", lat:39.41804, lng:-76.29869, phone:"443-456-9001", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"metwork-health-services-inc-eldersburg-2120", name:"Metwork Health Services, Inc.", address:"2120 Liberty Rd.", city:"Eldersburg", county:"Carroll", region:"Central", zip:"21784", lat:39.41891, lng:-76.93555, phone:"(410) 781-4158", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"sibus-treatment-services-llc-elkridge-6170", name:"Sibus Treatment Services LLC", address:"6170 Hunt Club RD", city:"Elkridge", county:"Howard", region:"Central", zip:"21075", lat:39.20924, lng:-76.72316, phone:"(443)820-3234", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"cecil-community-recovery-center-llc-elkton-409", name:"CECIL COMMUNITY RECOVERY CENTER, LLC", address:"409 W Pulaski Hwy", city:"Elkton", county:"Cecil", region:"Eastern", zip:"21921", lat:39.59189, lng:-75.83525, phone:"(443) 258-9696", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"concerted-care-group-elkton-llc-elkton-1275", name:"Concerted Care Group Elkton, LLC", address:"1275 B W Pulaski Highway", city:"Elkton", county:"Cecil", region:"Eastern", zip:"21921", lat:39.61577, lng:-75.81872, phone:"(833) 224-5483", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"serenity-health-llc-elkton-953", name:"Serenity Health, LLC", address:"953 West Pulaski Highway", city:"Elkton", county:"Cecil", region:"Eastern", zip:"21921", lat:39.60848, lng:-75.82706, phone:"(443) 485-6544", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"ats-of-cecil-county-llc-elkton-212", name:"ATS of Cecil County, LLC", address:"212 Blue Ball Ave.", city:"Elkton", county:"Cecil", region:"Eastern", zip:"21921", lat:39.6179, lng:-75.82685, phone:"(410) 620-6077", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"ellicott-city-health-llc-ellicott-city-10176", name:"Ellicott City Health LLC", address:"10176 Baltimore National Pike, Unit 115", city:"Ellicott City", county:"Howard", region:"Central", zip:"21042", lat:39.26182, lng:-76.80454, phone:"(410) 203-2120", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"glass-health-programs-inc-essex-8909", name:"Glass Health Programs, Inc.", address:"8909 Kelso Drive", city:"Essex", county:"Baltimore", region:"Central", zip:"21221", lat:39.31547, lng:-76.47845, phone:"(410) 486-2500", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"genesis-treatment-services-frederick-1160", name:"Genesis Treatment Services", address:"1160 W. Patrick St", city:"Frederick", county:"Frederick", region:"Western", zip:"21703", lat:39.42714, lng:-77.4072, phone:"(240) 831-4237", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"focus-recovery-center-frederick-801", name:"FOCUS RECOVERY  CENTER", address:"801 TOLL HOUSE AVENUE UNIT B1&B2", city:"FREDERICK", county:"Frederick", region:"Western", zip:"21701", lat:39.42117, lng:-77.41404, phone:"(240) 602-3608", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"concerted-care-group-frederick-frederick-92", name:"Concerted Care Group Frederick", address:"92 Thomas Johnson Drive", city:"Frederick", county:"Frederick", region:"Western", zip:"21702", lat:39.40434, lng:-77.4114, phone:"(240) 815-7300", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"smith-berch-inc-frederick-5716", name:"Smith-Berch, Inc.", address:"5716-C Industry Lane", city:"Frederick", county:"Frederick", region:"Western", zip:"21704-5185", lat:39.41493, lng:-77.41113, phone:"(301) 663-4130", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"bfw-group-holdings-llc-germantown-19537", name:"BFW Group Holdings LLC", address:"19537 Doctors Drive", city:"Germantown", county:"Montgomery", region:"Capital", zip:"20874", lat:39.1651, lng:-77.28469, phone:"(240) 654-4001", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"access-care-llc-germantown-20528", name:"Access Care, LLC", address:"20528 Boland Farm Rd", city:"Germantown", county:"Montgomery", region:"Capital", zip:"20876", lat:39.18631, lng:-77.26741, phone:"401-829-2654", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"e-j-a-l-health-services-inc-glen-burnie-7229", name:"E.J.A.L. Health Services, Inc.", address:"7229 Ritchie Hwy", city:"Glen Burnie", county:"Anne Arundel", region:"Central", zip:"21061", lat:39.16284, lng:-76.63214, phone:"(410) 761-3686", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"allcare-treatment-services-glen-burnie-550", name:"Allcare Treatment Services", address:"550 Crain Highway Unit 8-9", city:"Glen Burnie", county:"Anne Arundel", region:"Central", zip:"21061", lat:39.14928, lng:-76.63355, phone:"443-517-6552", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"anne-arundel-county-department-of-health-glen-burnie-600", name:"Anne Arundel County Department of Health", address:"600 E Ordnance Road", city:"Glen Burnie", county:"Anne Arundel", region:"Central", zip:"21060", lat:39.15471, lng:-76.61885, phone:"(410) 222-7095", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"we-care-arundel-health-services-inc-glen-burnie-13", name:"We Care Arundel Health Services, Inc.", address:"13 Aquahart Rd., Suite A", city:"Glen Burnie", county:"Anne Arundel", region:"Central", zip:"21061", lat:39.1545, lng:-76.62767, phone:"(410) 766-9668", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"anne-arundel-county-department-of-health-glen-burnie-122", name:"Anne Arundel County Department of Health", address:"122 Langley Road North Suite B", city:"Glen Burnie", county:"Anne Arundel", region:"Central", zip:"21060", lat:39.17346, lng:-76.63178, phone:"(410) 222-0100", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"grasonville-health-services-inc-grasonville-101", name:"Grasonville Health Services, Inc.", address:"101 Drummer Drive", city:"Grasonville", county:"Queen Anne's", region:"Eastern", zip:"21638", lat:38.94628, lng:-76.20216, phone:"(410) 413-7880", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"concerted-care-group-hagerstown-llc-hagerstown-10354", name:"Concerted Care Group Hagerstown, LLC", address:"10354 Supercenter Drive", city:"Hagerstown", county:"Washington", region:"Western", zip:"21740", lat:39.64639, lng:-77.70647, phone:"(833) 224-5483", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"phoenix-health-center-llc-hagerstown-217", name:"Phoenix Health Center, LLC", address:"217 East Antietam Street", city:"Hagerstown", county:"Washington", region:"Western", zip:"21740", lat:39.64006, lng:-77.70959, phone:"202-993-3862", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"metro-treatment-of-maryland-lp-hagerstown-16110", name:"Metro Treatment of Maryland, LP", address:"16110 Everly Road", city:"Hagerstown", county:"Washington", region:"Western", zip:"21740", lat:39.63424, lng:-77.7251, phone:"(301) 714-0837", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"evergreen-treatment-services-llc-havre-de-grace-2120", name:"Evergreen Treatment Services LLC.", address:"2120 Pulaski Hwy", city:"Havre De Grace", county:"Harford", region:"Central", zip:"21078", lat:39.56052, lng:-76.0949, phone:"(410) 272-9300", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"joppa-health-services-inc-joppa-623", name:"Joppa Health Services, Inc.", address:"623-A Pulaski Hwy.", city:"Joppa", county:"Harford", region:"Central", zip:"21085", lat:39.40862, lng:-76.35102, phone:"(410) 538-5809", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"riverside-treatment-services-lansdowne-llc-lansdowne-1903", name:"Riverside Treatment Services Lansdowne, LLC", address:"1903 Lansdowne Road", city:"Lansdowne", county:"Baltimore", region:"Central", zip:"21227", lat:39.25265, lng:-76.65488, phone:"(410) 565-6244", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"we-care-health-services-inc-laurel-8730", name:"We Care Health Services, Inc.", address:"8730-1 Cherry Lane", city:"Laurel", county:"Prince George's", region:"Capital", zip:"20707", lat:39.11202, lng:-76.8498, phone:"301-490-7995", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"ats-of-cecil-county-llc-lavale-14701", name:"ATS of Cecil County, LLC", address:"14701 National Hwy", city:"LaVale", county:"Allegany", region:"Western", zip:"21502", lat:39.65567, lng:-78.81865, phone:"(301) 687-0940", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"outlook-recovery-llc-lexington-park-21615", name:"Outlook Recovery, LLC", address:"21615 S Essex DR", city:"Lexington Park", county:"St. Mary's", region:"Southern", zip:"20653-4144", lat:38.27745, lng:-76.44826, phone:"(240) 237-8325", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"chesapeake-treatment-services-ocean-city-llc-ocean-city-1241", name:"CHESAPEAKE TREATMENT SERVICES OCEAN CITY LLC", address:"12417 Ocean Gateway", city:"Ocean  City", county:"Worcester", region:"Eastern", zip:"21842-9522", lat:38.32561, lng:-75.08427, phone:"(410) 373-2113", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"pikesville-health-services-pikesville-1209", name:"Pikesville Health Services", address:"1209 Greenwood Rd", city:"Pikesville", county:"Baltimore", region:"Central", zip:"21208", lat:39.36494, lng:-76.73606, phone:"(410) 484-8500", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"open-arms-and-hearts-health-services-llc-pocomoke-city-1532", name:"Open Arms & Hearts Health Services, LLC", address:"1532 Ocean Highway", city:"Pocomoke City", county:"Worcester", region:"Eastern", zip:"21851", lat:38.07633, lng:-75.55408, phone:"443-437-7128", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"bayside-recovery-llc-prince-frederick-440", name:"Bayside Recovery, LLC", address:"440 Solomons Island Road N.", city:"Prince Frederick", county:"Calvert", region:"Southern", zip:"20678-3941", lat:38.54256, lng:-76.57312, phone:"(443) 486-5680", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"montgomery-recovery-services-inc-rockville-14636", name:"Montgomery Recovery Services, Inc.", address:"14636 Rothgeb Drive", city:"Rockville", county:"Montgomery", region:"Capital", zip:"20850", lat:39.08433, lng:-77.16561, phone:"(301) 762-5300", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"medication-assisted-treatment-program-rockville-1500", name:"Medication Assisted Treatment Program", address:"1500 East Gude Drive", city:"Rockville", county:"Montgomery", region:"Capital", zip:"20850", lat:39.08739, lng:-77.16072, phone:"240-777-1679", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"riverside-treatment-services-llc-rosedale-8359", name:"Riverside Treatment Services, LLC", address:"8359 Pulaski Hwy", city:"Rosedale", county:"Baltimore", region:"Central", zip:"21237", lat:39.32598, lng:-76.51223, phone:"443-730-6104", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"b-n-j-health-services-inc-salisbury-salisbury-204", name:"B.N.J. HEALTH SERVICES, INC. SALISBURY", address:"204 NEWTON STREET", city:"SALISBURY", county:"Wicomico", region:"Eastern", zip:"21801", lat:38.37372, lng:-75.59667, phone:"443-978-7919", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"wicomico-county-health-department-methadone-program-prmc-sal", name:"Wicomico County Health Department Methadone Program - PRMC", address:"203 Newton Street", city:"Salisbury", county:"Wicomico", region:"Eastern", zip:"21801", lat:38.36535, lng:-75.59319, phone:"(410) 742-3784", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"another-way-inc-takoma-park-1363", name:"Another Way, Inc.", address:"1363 Holton Lane", city:"Takoma Park", county:"Montgomery", region:"Capital", zip:"20912", lat:38.98963, lng:-77.01761, phone:"(301) 434-2622", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"glass-health-programs-inc-timonium-2", name:"Glass Health Programs, Inc.", address:"2 W. Aylesbury Rd.", city:"Timonium", county:"Baltimore", region:"Central", zip:"21093", lat:39.43556, lng:-76.59752, phone:"(410) 561-9591", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"open-armms-inc-waldorf-2590", name:"Open ARMMS, Inc.", address:"2590 Business Park Ct.", city:"Waldorf", county:"Charles", region:"Southern", zip:"20601", lat:38.63243, lng:-76.94978, phone:"(301) 645-5538", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"11100-billingsley-road-opco-llc-waldorf-11100", name:"11100 Billingsley Road OPCO LLC", address:"11100 Billingsley Road", city:"Waldorf", county:"Charles", region:"Southern", zip:"20602", lat:38.63384, lng:-76.9373, phone:"", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"healing-hearts-treatment-center-westminster-688", name:"Healing Hearts Treatment Center", address:"688 Poole Rd., Ste. C", city:"WESTMINSTER", county:"Carroll", region:"Central", zip:"21157", lat:39.57246, lng:-77.00048, phone:"", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"genesis-treatment-services-westminster-1106", name:"Genesis Treatment Services", address:"1106 Business Parkway, Suite B", city:"Westminster", county:"Carroll", region:"Central", zip:"21157", lat:39.57039, lng:-77.0045, phone:"(410) 751-7771", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"bh-health-services-inc-westminster-450", name:"BH Health Services, Inc.", address:"450 E. Main Street", city:"Westminster", county:"Carroll", region:"Central", zip:"21157", lat:39.56256, lng:-77.00387, phone:"(410) 871-3005", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+  { slug:"a-helping-hand-woodlawn-6401", name:"A Helping Hand", address:"6401 Dogwood Rd Suite 201", city:"Woodlawn", county:"Baltimore", region:"Central", zip:"21207", lat:39.31994, lng:-76.7412, phone:"(410) 653-0021", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:false, sliding:false, uninsured:false, telehealth:false },
+];
+
+/* live status keyed by slug: { accepting_status, waitlist_note, status_updated_at, freshness_status } */
+let STATUS = {};
+
+/* filter state */
+const F = { status:'all', med:'all', pay:'all', county:'all', search:'' };
+
+/* ── render helpers ── */
+function statusOf(slug){ return (STATUS[slug] && STATUS[slug].accepting_status) || 'unknown'; }
+function statusLabel(s){ return s==='not_accepting'?'NOT ACCEPTING':s==='unknown'?'STATUS UNKNOWN':s.toUpperCase(); }
+function meds(c){
+  const m=[]; if(c.methadone)m.push('Methadone'); if(c.buprenorphine)m.push('Buprenorphine'); if(c.naltrexone)m.push('Naltrexone');
+  return m;
+}
+function ageStr(ts){
+  if(!ts) return '';
+  const d=Math.round((Date.now()-new Date(ts).getTime())/86400000);
+  return d<=0?'updated today':d===1?'updated 1 day ago':'updated '+d+' days ago';
+}
+
+let map, markers=[];
+function initMap(){
+  map = L.map('md-map',{scrollWheelZoom:false}).setView([39.045,-76.641],7);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:18
+  }).addTo(map);
+}
+function colorFor(s){ return s==='accepting'?'#1db954':s==='waitlist'?'#d4af4f':s==='not_accepting'?'#e03e3e':'#bbb'; }
+
+function renderMap(list){
+  markers.forEach(m=>map.removeLayer(m)); markers=[];
+  list.forEach(c=>{
+    if(c.lat==null||c.lng==null) return;
+    const s=statusOf(c.slug);
+    const mk=L.circleMarker([c.lat,c.lng],{
+      radius:7,color:'#fff',weight:1.5,fillColor:colorFor(s),fillOpacity:.95
+    }).addTo(map);
+    mk.bindPopup('<b>'+c.name+'</b><br>'+(c.city||'')+', '+c.county+'<br><b style="color:'+colorFor(s)+'">'+statusLabel(s)+'</b><br>'+
+      (c.phone?'<a href="tel:'+c.phone+'">'+c.phone+'</a>':''));
+    markers.push(mk);
+  });
+}
+
+function render(){
+  const list = CLINICS.filter(c=>{
+    if(F.status!=='all' && statusOf(c.slug)!==F.status) return false;
+    if(F.med!=='all' && !c[F.med]) return false;
+    if(F.pay!=='all' && !c[F.pay]) return false;
+    if(F.county!=='all' && c.county!==F.county) return false;
+    if(F.search){
+      const q=F.search.toLowerCase();
+      if(!((c.name||'').toLowerCase().includes(q)||(c.city||'').toLowerCase().includes(q)||(c.zip||'').includes(q))) return false;
+    }
+    return true;
+  });
+
+  const tb=document.getElementById('clinic-tbody');
+  tb.innerHTML = list.map(c=>{
+    const s=statusOf(c.slug); const st=STATUS[c.slug]||{};
+    const medTags = meds(c).map(m=>'<span class="med-tag">'+m+'</span>').join('');
+    return `<tr>
+      <td><div class="cname">${c.name}</div><div class="caddr">${c.address||''}${c.city?', '+c.city:''} ${c.zip||''}</div></td>
+      <td><span class="county-tag">${c.county}</span></td>
+      <td>
+        <span class="status-badge sb-${s}"><span class="sdot sdot-${s}"></span>${statusLabel(s)}</span>
+        ${s==='waitlist'&&st.waitlist_note?'<div class="wait-note">'+st.waitlist_note+'</div>':''}
+        ${st.status_updated_at?'<div class="fresh">'+ageStr(st.status_updated_at)+'</div>':''}
+      </td>
+      <td>${medTags||'<span class="county-tag">—</span>'}</td>
+      <td>
+        ${c.phone?'<a class="call-btn" href="tel:'+c.phone+'">CALL</a>':''}
+        ${c.website?'<a class="web-link" href="'+c.website+'" target="_blank" rel="noopener">Website ↗</a>':''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('empty-msg').style.display = list.length?'none':'block';
+  document.getElementById('result-count').textContent =
+    list.length+' of '+CLINICS.length+' clinics';
+  renderMap(list);
+}
+
+function applyFilters(){ F.search=document.getElementById('search').value.trim(); render(); }
+function pillToggle(group,el){ document.querySelectorAll('[data-'+group+']').forEach(p=>p.classList.remove('on')); el.classList.add('on'); }
+function setStatus(el,v){ pillToggle('status',el); F.status=v; render(); }
+function setMed(el,v){ pillToggle('med',el); F.med=v; render(); }
+function setPay(el,v){ pillToggle('pay',el); F.pay=v; render(); }
+function setCounty(el,v){ pillToggle('county',el); F.county=v; render(); }
+
+function buildCountyPills(){
+  const counties=[...new Set(CLINICS.map(c=>c.county))].sort();
+  const row=document.getElementById('county-row');
+  counties.forEach(ct=>{
+    const span=document.createElement('span');
+    span.className='filter-pill'; span.dataset.county=ct; span.textContent=ct;
+    span.onclick=()=>setCounty(span,ct);
+    row.appendChild(span);
+  });
+}
+
+function computeStats(){
+  document.getElementById('stat-total').textContent = CLINICS.length;
+  document.getElementById('stat-counties').textContent = new Set(CLINICS.map(c=>c.county)).size;
+  const vals=CLINICS.map(c=>statusOf(c.slug));
+  document.getElementById('stat-accepting').textContent = vals.filter(v=>v==='accepting').length;
+  document.getElementById('stat-waitlist').textContent  = vals.filter(v=>v==='waitlist').length;
+}
+
+function ingest(rows){
+  (rows||[]).forEach(r=>{ if(r.slug) STATUS[r.slug]=r; });
+  computeStats(); render();
+}
+
+/* live data from Supabase (the iframe connects on its own) */
+async function loadLive(){
+  if(!supabaseClient) return;
+  try{
+    const { data, error } = await supabaseClient
+      .from('v_methadone_live_status')
+      .select('slug, accepting_status, waitlist_note, status_updated_at, freshness_status');
+    if(!error && data) ingest(data);
+
+    supabaseClient.channel('status-changes')
+      .on('postgres_changes',{event:'*',schema:'public',table:'clinic_status'},()=>loadLive())
+      .subscribe();
+  }catch(e){ /* offline / not configured yet */ }
+}
+
+/* also accept server-rendered data passed from the Next.js parent page */
+window.addEventListener('message',(e)=>{
+  if(e.data && e.data.type==='SUPABASE_STATUS_DATA') ingest(e.data.data);
+});
+
+/* boot */
+initMap();
+buildCountyPills();
+computeStats();
+render();
+loadLive();
+</script>
+</body>
+</html>

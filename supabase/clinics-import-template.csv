@@ -1,0 +1,3 @@
+slug,name,address,city,county,region,zip,lat,lng,phone_number,website_url,intake_email,hours,offers_methadone,offers_buprenorphine,offers_naltrexone,accepts_medicaid,accepts_medicare,accepts_private,sliding_scale,uninsured_ok,telehealth,is_active,is_verified
+sample-baltimore-otp,Sample Baltimore OTP,100 Main St,Baltimore,Baltimore City,Central,21201,39.2904,-76.6122,410-555-0100,,intake@example.org,Mon-Fri 5a-1p,true,true,false,true,true,true,true,true,false,true,false
+sample-rockville-otp,Sample Rockville Treatment Center,200 Center Ave,Rockville,Montgomery,Capital,20850,39.0840,-77.1528,301-555-0200,,,Mon-Sat 6a-2p,true,false,true,true,false,true,false,false,true,true,false
