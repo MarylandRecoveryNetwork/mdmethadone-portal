@@ -74,6 +74,9 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
   ].filter(Boolean) as string[];
   const fullAddr = [c.address, c.city, "MD", c.zip].filter(Boolean).join(", ");
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.name + " " + fullAddr)}`;
+  const streetHref = c.lat != null && c.lng != null
+    ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${c.lat},${c.lng}` : null;
+  const referHref = `https://mail.google.com/mail/?view=cm&fs=1&to=info@marylandmethadone.help&su=${encodeURIComponent("Referral / Admissions Inquiry — " + c.name)}&body=${encodeURIComponent("I am inquiring about admissions / a referral for " + c.name + ".")}`;
   const osm = c.lat != null && c.lng != null
     ? `https://www.openstreetmap.org/export/embed.html?bbox=${c.lng - 0.02}%2C${c.lat - 0.015}%2C${c.lng + 0.02}%2C${c.lat + 0.015}&layer=mapnik&marker=${c.lat}%2C${c.lng}`
     : null;
@@ -124,7 +127,9 @@ export default async function FacilityPage({ params }: { params: Promise<{ slug:
           <div style={S.ctaCol}>
             {c.phone_number && <a href={`tel:${tel}`} style={S.callBtn}>📞 Call {c.phone_number}</a>}
             <a href={mapsHref} target="_blank" rel="noopener" style={S.dirBtn}>🧭 Get Directions</a>
-            {c.website_url && <a href={c.website_url} target="_blank" rel="noopener" style={S.dirBtn}>🌐 Website</a>}
+            {streetHref && <a href={streetHref} target="_blank" rel="noopener" style={S.dirBtn}>🌐 Street View</a>}
+            <a href={referHref} target="_blank" rel="noopener" style={S.dirBtn}>✉️ Refer / Inquire</a>
+            {c.website_url && <a href={c.website_url} target="_blank" rel="noopener" style={S.dirBtn}>🔗 Website</a>}
           </div>
         </div>
 
