@@ -100,6 +100,11 @@ body{font-family:var(--font-body);background:var(--surface);color:var(--text);fo
 .cname{font-weight:600;font-size:13px;color:var(--text);text-decoration:none;cursor:pointer;}
 a.cname:hover{color:var(--gold-dim);text-decoration:underline;}
 .caddr{font-size:11px;color:var(--muted);margin-top:2px;}
+/* featured (sponsored) facilities */
+tr.fc-featured td{background:rgba(255,184,28,.10);}
+tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
+.fc-featured-badge{display:inline-block;font-family:var(--font-mono);font-size:8px;letter-spacing:1px;background:var(--gold);color:#1a1a1a;padding:2px 6px;border-radius:2px;margin-left:8px;font-weight:700;vertical-align:middle;}
+.featured-head{font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--gold-dim);padding:8px 12px;background:rgba(255,184,28,.07);border-bottom:1px solid var(--border);}
 .county-tag{font-size:10px;color:var(--muted);font-family:var(--font-mono);}
 .med-tag{font-size:9px;padding:2px 5px;border-radius:2px;display:inline-block;background:var(--gold-bg);color:var(--gold-dim);
   border:1px solid rgba(255,184,28,.3);margin:1px;white-space:nowrap;}
@@ -125,7 +130,7 @@ a.cname:hover{color:var(--gold-dim);text-decoration:underline;}
 .web-link{font-family:var(--font-mono);font-size:10px;color:var(--blue);display:block;margin-top:4px;}
 
 /* map */
-.map-panel{display:flex;flex-direction:column;gap:10px;position:sticky;top:60px;align-self:start;}
+.map-panel{display:flex;flex-direction:column;gap:10px;}
 .map-box{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;}
 .map-header{background:var(--black2);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
 .map-title{font-family:var(--font-display);font-size:14px;color:var(--gold);letter-spacing:1px;}
@@ -371,6 +376,16 @@ const CLINICS = [
   { slug:"a-helping-hand-woodlawn-6401", name:"A Helping Hand", address:"6401 Dogwood Rd Suite 201", city:"Woodlawn", county:"Baltimore", region:"Central", zip:"21207", lat:39.31994, lng:-76.7412, phone:"(410) 653-0021", website:"", methadone:true, buprenorphine:false, naltrexone:false, medicaid:true, medicare:false, private:true, sliding:false, uninsured:true, telehealth:false },
 ];
 
+/* ═══════════════════════════════════════════════════════
+   FEATURED (SPONSORED) FACILITIES
+   Add a clinic's `slug` here to pin it to the top of the list
+   with a gold "Featured" badge (paid placement, like mdaddiction.help).
+   ═══════════════════════════════════════════════════════ */
+const FEATURED = new Set([
+  'tuerk-house-inc-baltimore-730',
+  'new-journey-incorporated-annapolis-32',
+]);
+
 /* live status keyed by slug: { accepting_status, waitlist_note, status_updated_at, freshness_status } */
 let STATUS = {};
 
@@ -400,9 +415,10 @@ function initMap(){
   map.addLayer(cluster);
 }
 function colorFor(s){ return s==='accepting'?'#1db954':s==='waitlist'?'#d4af4f':s==='not_accepting'?'#e03e3e':'#bbb'; }
-function pin(color){
-  return L.divIcon({ className:'', iconSize:[20,20], iconAnchor:[10,10],
-    html:'<div style="width:16px;height:16px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)"></div>' });
+function pin(color, fe){
+  const sz = fe?22:16, border = fe?'3px solid #FFB81C':'2px solid #fff';
+  return L.divIcon({ className:'', iconSize:[sz+4,sz+4], iconAnchor:[(sz+4)/2,(sz+4)/2],
+    html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+color+';border:'+border+';box-shadow:0 1px 5px rgba(0,0,0,.5)"></div>' });
 }
 
 function renderMap(list){
@@ -411,7 +427,7 @@ function renderMap(list){
   list.forEach(c=>{
     if(c.lat==null||c.lng==null) return;
     const s=statusOf(c.slug);
-    const mk=L.marker([c.lat,c.lng],{icon:pin(colorFor(s))});
+    const mk=L.marker([c.lat,c.lng],{icon:pin(colorFor(s),FEATURED.has(c.slug))});
     mk.bindPopup('<a href="/facilities/md/'+c.slug+'" target="_top"><b>'+c.name+'</b></a><br>'+(c.city||'')+', '+c.county+'<br><b style="color:'+colorFor(s)+'">'+statusLabel(s)+'</b><br>'+
       (c.phone?'<a href="tel:'+c.phone+'">'+c.phone+'</a> &middot; ':'')+'<a href="/facilities/md/'+c.slug+'" target="_top">View details →</a>');
     cluster.addLayer(mk);
@@ -431,12 +447,16 @@ function render(){
     return true;
   });
 
+  // Featured (sponsored) facilities float to the top of the results.
+  list.sort((a,b)=>(FEATURED.has(b.slug)?1:0)-(FEATURED.has(a.slug)?1:0));
+
   const tb=document.getElementById('clinic-tbody');
   tb.innerHTML = list.map(c=>{
     const s=statusOf(c.slug); const st=STATUS[c.slug]||{};
+    const fe=FEATURED.has(c.slug);
     const medTags = meds(c).map(m=>'<span class="med-tag">'+m+'</span>').join('');
-    return `<tr>
-      <td><a class="cname" href="/facilities/md/${c.slug}" target="_top">${c.name}</a><div class="caddr">${c.address||''}${c.city?', '+c.city:''} ${c.zip||''}</div></td>
+    return `<tr class="${fe?'fc-featured':''}">
+      <td><a class="cname" href="/facilities/md/${c.slug}" target="_top">${c.name}</a>${fe?'<span class="fc-featured-badge">★ FEATURED</span>':''}<div class="caddr">${c.address||''}${c.city?', '+c.city:''} ${c.zip||''}</div></td>
       <td><span class="county-tag">${c.county}</span></td>
       <td>
         <span class="status-badge sb-${s}"><span class="sdot sdot-${s}"></span>${statusLabel(s)}</span>
