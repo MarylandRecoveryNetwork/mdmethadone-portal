@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // your project ref (Supabase → Settings → API → Project URL).
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "YOUR_PROJECT_REF.supabase.co" },
+      { protocol: "https", hostname: "rbcsvsixnhrdcazldnyf.supabase.co" },
     ],
   },
 };
