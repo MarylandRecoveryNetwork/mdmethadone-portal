@@ -86,7 +86,7 @@ body{font-family:var(--font-body);background:var(--surface);color:var(--text);fo
 
 /* layout */
 /* 60% cards · 40% map, full width */
-.content-grid{display:grid;grid-template-columns:3fr 2fr;gap:1rem;align-items:start;}
+.content-grid{display:grid;grid-template-columns:3fr 2fr;gap:1rem;align-items:stretch;}
 
 /* table */
 .table-wrap{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
@@ -161,11 +161,11 @@ tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
 .fc-btn.primary:hover{background:var(--gold-dim);color:#fff;}
 
 /* map */
-.map-panel{display:flex;flex-direction:column;gap:10px;}
-.map-box{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;}
+.map-panel{display:flex;flex-direction:column;gap:10px;height:100%;}
+.map-box{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;flex:1;}
 .map-header{background:var(--black2);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
 .map-title{font-family:var(--font-display);font-size:14px;color:var(--gold);letter-spacing:1px;}
-#md-map{height:calc(100vh - 150px);min-height:480px;}
+#md-map{flex:1;min-height:480px;}
 .map-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 12px;background:var(--surface);border-top:1px solid var(--border);}
 .leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:var(--font-mono);}
 .leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
@@ -177,7 +177,7 @@ tr.fc-featured:hover td{background:rgba(255,184,28,.16);}
   .content-grid{grid-template-columns:1fr;}
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .map-panel{position:static;}
-  #md-map{height:380px;min-height:0;}
+  #md-map{flex:none;height:380px;min-height:0;}
   .hero-inner{grid-template-columns:1fr;}
   .qr-card{width:100%;}
   .help-line-inner{flex-direction:column;text-align:center;}
@@ -549,6 +549,7 @@ function render(){
   document.getElementById('result-count').textContent =
     list.length+' of '+CLINICS.length+' clinics';
   renderMap(list);
+  if(map) requestAnimationFrame(()=>map.invalidateSize());
 }
 
 function applyFilters(){ F.search=document.getElementById('search').value.trim(); render(); }
