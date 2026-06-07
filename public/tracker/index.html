@@ -22,6 +22,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
@@ -57,7 +60,7 @@ body{font-family:var(--font-body);background:var(--surface);color:var(--text);fo
 .hero-sub{font-size:13px;color:#999;margin-top:8px;max-width:640px;}
 
 /* main */
-.main{max-width:1200px;margin:0 auto;padding:1.25rem;}
+.main{width:100%;padding:1.25rem;}
 
 /* stats */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
@@ -82,7 +85,8 @@ body{font-family:var(--font-body);background:var(--surface);color:var(--text);fo
 .search-input:focus{border-color:var(--gold);}
 
 /* layout */
-.content-grid{display:grid;grid-template-columns:1fr 380px;gap:1rem;}
+/* 60% cards · 40% map, full width */
+.content-grid{display:grid;grid-template-columns:3fr 2fr;gap:1rem;align-items:start;}
 
 /* table */
 .table-wrap{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
@@ -122,10 +126,10 @@ a.cname:hover{color:var(--gold-dim);text-decoration:underline;}
 
 /* map */
 .map-panel{display:flex;flex-direction:column;gap:10px;position:sticky;top:60px;align-self:start;}
-.map-box{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.map-box{background:#fff;border:1px solid var(--border);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;}
 .map-header{background:var(--black2);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
 .map-title{font-family:var(--font-display);font-size:14px;color:var(--gold);letter-spacing:1px;}
-#md-map{height:420px;}
+#md-map{height:calc(100vh - 150px);min-height:480px;}
 .map-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 12px;background:var(--surface);border-top:1px solid var(--border);}
 .leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:var(--font-mono);}
 .leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
@@ -137,6 +141,7 @@ a.cname:hover{color:var(--gold-dim);text-decoration:underline;}
   .content-grid{grid-template-columns:1fr;}
   .stats-row{grid-template-columns:repeat(2,1fr);}
   .map-panel{position:static;}
+  #md-map{height:380px;min-height:0;}
 }
 </style>
 </head>
@@ -384,26 +389,31 @@ function ageStr(ts){
   return d<=0?'updated today':d===1?'updated 1 day ago':'updated '+d+' days ago';
 }
 
-let map, markers=[];
+let map, cluster=null;
 function initMap(){
-  map = L.map('md-map',{scrollWheelZoom:false}).setView([39.045,-76.641],7);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:18
+  map = L.map('md-map',{scrollWheelZoom:false,zoomControl:true}).setView([39.045,-77.0],8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; OpenStreetMap contributors', maxZoom:19
   }).addTo(map);
+  cluster = L.markerClusterGroup({ maxClusterRadius:40, spiderfyOnMaxZoom:true, showCoverageOnHover:false });
+  map.addLayer(cluster);
 }
 function colorFor(s){ return s==='accepting'?'#1db954':s==='waitlist'?'#d4af4f':s==='not_accepting'?'#e03e3e':'#bbb'; }
+function pin(color){
+  return L.divIcon({ className:'', iconSize:[20,20], iconAnchor:[10,10],
+    html:'<div style="width:16px;height:16px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45)"></div>' });
+}
 
 function renderMap(list){
-  markers.forEach(m=>map.removeLayer(m)); markers=[];
+  if(!cluster) return;
+  cluster.clearLayers();
   list.forEach(c=>{
     if(c.lat==null||c.lng==null) return;
     const s=statusOf(c.slug);
-    const mk=L.circleMarker([c.lat,c.lng],{
-      radius:7,color:'#fff',weight:1.5,fillColor:colorFor(s),fillOpacity:.95
-    }).addTo(map);
+    const mk=L.marker([c.lat,c.lng],{icon:pin(colorFor(s))});
     mk.bindPopup('<a href="/facilities/md/'+c.slug+'" target="_top"><b>'+c.name+'</b></a><br>'+(c.city||'')+', '+c.county+'<br><b style="color:'+colorFor(s)+'">'+statusLabel(s)+'</b><br>'+
       (c.phone?'<a href="tel:'+c.phone+'">'+c.phone+'</a> &middot; ':'')+'<a href="/facilities/md/'+c.slug+'" target="_top">View details →</a>');
-    markers.push(mk);
+    cluster.addLayer(mk);
   });
 }
 
